@@ -1,0 +1,21 @@
+{
+    "name": "gcsreader",
+    "parameter": {
+        "jsonKeyPath": "",
+        "bucket": "",
+        "pathPrefix": "",
+        "skipHeader": true,
+        "fieldDelimiter": ",",
+        "column": [
+            {
+                "index": 3,
+                "type": "string"
+            },
+            {
+                "index": 4,
+                "type": "date",
+                "format": "yyyy-MM-dd"
+            }
+        ]
+    }
+}

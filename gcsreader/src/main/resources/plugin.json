@@ -1,0 +1,7 @@
+{
+    "name": "gcsreader",
+    "class": "com.alibaba.datax.plugin.reader.gcsreader.GcsReader",
+    "description": "",
+    "developer": "alibaba"
+}
+
