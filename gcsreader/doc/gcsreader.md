@@ -1,18 +1,19 @@
-# DataX OSSReader 说明
+# DataX GcsReader 说明
 
 
 ------------
 
 ## 1 快速介绍
 
-OSSReader提供了读取OSS数据存储的能力。在底层实现上，OSSReader使用OSS官方Java SDK获取OSS数据，并转换为DataX传输协议传递给Writer。
+GcsReader提供了读取Gcs数据存储的能力。在底层实现上，GcsReader使用Gcs官方Java SDK获取Gcs数据，并转换为DataX传输协议传递给Writer。
 
-* OSS 产品介绍, 参看[[阿里云OSS Portal](http://www.aliyun.com/product/oss)]
-* OSS Java SDK, 参看[[阿里云OSS Java SDK](http://oss.aliyuncs.com/aliyun_portal_storage/help/oss/OSS_Java_SDK_Dev_Guide_20141113.pdf)]
+* Gcs 产品介绍, 参看[[阿里云Gcs Portal](http://www.aliyun.com/product/Gcs)]
+* Gcs Java SDK, 参看[[阿里云Gcs Java SDK](http://Gcs.aliyuncs.com/aliyun_portal_storage/help/Gcs/Gcs_Java_SDK_Dev_Guide_20141113.pdf)]
 
 ## 2 功能与限制
 
 1. 支持类CSV格式文件，自定义分隔符。
+2. 支持类 parquet 格式文件，自定义分隔符。
 
 我们暂时不能做到：
 
@@ -40,6 +41,7 @@ OSSReader提供了读取OSS数据存储的能力。在底层实现上，OSSReade
 						"pathPrefix": "",
 						"skipHeader": true,
 						"fieldDelimiter": ",",
+						"fileType": "csv",
 						"column": [
 							{
 								"index": 3,
@@ -74,7 +76,7 @@ OSSReader提供了读取OSS数据存储的能力。在底层实现上，OSSReade
 
 * **bucket**
 
-	* 描述：OSS的bucket  <br />
+	* 描述：Gcs的bucket  <br />
 
 	* 必选：是 <br />
 
@@ -82,13 +84,13 @@ OSSReader提供了读取OSS数据存储的能力。在底层实现上，OSSReade
 
 * **object**
 
-	* 描述：OSS的object信息，注意这里可以支持填写多个Object。 <br />
+	* 描述：Gcs的object信息，注意这里可以支持填写多个Object。 <br />
 
-		 当指定单个OSS Object，OSSReader暂时只能使用单线程进行数据抽取。二期考虑在非压缩文件情况下针对单个Object可以进行多线程并发读取。
+		 当指定单个Gcs Object，GcsReader暂时只能使用单线程进行数据抽取。二期考虑在非压缩文件情况下针对单个Object可以进行多线程并发读取。
 
-		当指定多个OSS Object，OSSReader支持使用多线程进行数据抽取。线程并发数通过通道数指定。
+		当指定多个Gcs Object，GcsReader支持使用多线程进行数据抽取。线程并发数通过通道数指定。
 
-		当指定通配符，OSSReader尝试遍历出多个Object信息。例如: 指定/*代表读取bucket下游所有的Object，指定/bazhen/\*代表读取bazhen目录下游所有的Object。
+		当指定通配符，GcsReader尝试遍历出多个Object信息。例如: 指定/*代表读取bucket下游所有的Object，指定/bazhen/\*代表读取bazhen目录下游所有的Object。
 
 		**特别需要注意的是，DataX会将一个作业下同步的所有Object视作同一张数据表。用户必须自己保证所有的Object能够适配同一套schema信息。**
 
@@ -111,11 +113,11 @@ OSSReader提供了读取OSS数据存储的能力。在底层实现上，OSSReade
 		```json
 		{
            "type": "long",
-           "index": 0    //从OSS文本第一列获取int字段
+           "index": 0    //从Gcs文本第一列获取int字段
         },
         {
            "type": "string",
-           "value": "alibaba"  //从OSSReader内部生成alibaba的字符串字段作为当前字段
+           "value": "alibaba"  //从GcsReader内部生成alibaba的字符串字段作为当前字段
         }
 		```
 
@@ -208,22 +210,26 @@ boolean captureRawRecord = true;
 ### 3.3 类型转换
 
 
-OSS本身不提供数据类型，该类型是DataX OSSReader定义：
+Gcs本身不提供数据类型，该类型是DataX GcsReader定义：
 
-| DataX 内部类型| OSS 数据类型    |
-| -------- | -----  |
-| Long     |Long |
-| Double   |Double|
-| String   |String|
-| Boolean  |Boolean |
-| Date     |Date |
+| DataX 内部类型| Gcs 数据类型            | bigquery            |
+| -------- |---------------------|---------------------|
+| Long     | Long                | int32 int64         |
+| Double   | Double              | float double        |
+| String   | String              | String               |
+| Boolean  | Boolean             | Boolean               |
+| Date     | Date                | Date               |
+| TIMESTAMP_MICROS     | int64 (仅适用于parquet) | datetime /timestamp |
+| DATE_INT32     | int32(仅适用于仅适用于parquet)        | Date                | 
+
 
 其中：
 
-* OSS Long是指OSS文本中使用整形的字符串表示形式，例如"19901219"。
-* OSS Double是指OSS文本中使用Double的字符串表示形式，例如"3.1415"。
-* OSS Boolean是指OSS文本中使用Boolean的字符串表示形式，例如"true"、"false"。不区分大小写。
-* OSS Date是指OSS文本中使用Date的字符串表示形式，例如"2014-12-31"，Date可以指定format格式。
+* Gcs Long是指Gcs文本中使用整形的字符串表示形式，例如"19901219"。
+* Gcs Double是指Gcs文本中使用Double的字符串表示形式，例如"3.1415"。
+* Gcs Boolean是指Gcs文本中使用Boolean的字符串表示形式，例如"true"、"false"。不区分大小写。
+* Gcs Date是指Gcs文本中使用Date的字符串表示形式，例如"2014-12-31"，Date可以指定format格式。
+* bigquery load  parquet 时， 日期时间、 时间戳会存储为int64 ,新增TIMESTAMP_MICROS/DATE_INT32 来兼容
 
 ## 4 性能报告
 
