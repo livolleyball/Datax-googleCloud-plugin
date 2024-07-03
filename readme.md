@@ -2,6 +2,7 @@ datax plugin for google cloud
 ============================
 
 - [X]  读取bucket 指定目录下的 csv 文件
+- [X]  读取bucket 指定目录下的 parquet 文件
 - [ ]  使用bigquery query reader 
     - [ ] 使用bigqeury 进行查询
     - [ ] 结果数据写入临时表
