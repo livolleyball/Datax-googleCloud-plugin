@@ -8,4 +8,6 @@ public class Key {
     public static final String BUCKET = "bucket";
     public static final String PATH_PREFIX = "pathPrefix";
 
+    public static final String FILETYPE = "fileType";
+
 }

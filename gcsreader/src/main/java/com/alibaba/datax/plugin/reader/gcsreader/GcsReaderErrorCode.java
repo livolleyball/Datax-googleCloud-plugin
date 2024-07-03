@@ -2,9 +2,7 @@ package com.alibaba.datax.plugin.reader.gcsreader;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-/**
- * Created by mengxin.liumx on 2014/12/7.
- */
+
 public enum GcsReaderErrorCode implements ErrorCode {
     // TODO: 修改错误码类型
     RUNTIME_EXCEPTION("GcsReader-00", "运行时异常"),
@@ -13,7 +11,8 @@ public enum GcsReaderErrorCode implements ErrorCode {
 
     ILLEGAL_VALUE("GcsReader-06", "值错误"),
 
-    EMPTY_BUCKET_EXCEPTION("OssReader-10", "您尝试读取的Bucket为空");
+    EMPTY_BUCKET_EXCEPTION("GcsReader-10", "您尝试读取的Bucket为空"),
+    BAD_CONFIG_VALUE("GcsReader-11", "配置化有误");
 
     private final String code;
     private final String description;

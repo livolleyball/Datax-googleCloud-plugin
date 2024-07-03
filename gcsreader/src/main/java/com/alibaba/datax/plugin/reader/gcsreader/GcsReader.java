@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.gcsreader.util.DFSUtil;
 import com.alibaba.datax.plugin.reader.gcsreader.util.GCSUtil;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.google.cloud.storage.Blob;
@@ -17,7 +18,6 @@ import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +30,7 @@ public class GcsReader extends Reader {
 
         private String bucket;
         private String pathPrefix;
+        private String fileType;
 
         @Override
         public void init() {
@@ -45,6 +46,7 @@ public class GcsReader extends Reader {
 
             bucket = this.readerOriginConfig.getString(Key.BUCKET);
             pathPrefix = this.readerOriginConfig.getString(Key.PATH_PREFIX);
+            fileType = this.readerOriginConfig.getString(Key.FILETYPE);
             if (StringUtils.isBlank(bucket)) {
                 throw DataXException.asDataXException(
                         GcsReaderErrorCode.CONFIG_INVALID_BUCKET,
@@ -112,10 +114,8 @@ public class GcsReader extends Reader {
             Bucket bucket = storgeClient.get(this.bucket);
             Iterable<Blob> blobs = bucket.list(Storage.BlobListOption.prefix(pathPrefix)).iterateAll();
 
-
-
             for (Blob blob : blobs) {
-                if (!blob.isDirectory() && isDirectory(blob.getName())) {
+                if (!blob.isDirectory()) {
                     remoteObjectListings.add(blob.getName());
                 }
             }
@@ -132,7 +132,7 @@ public class GcsReader extends Reader {
             String numberStr = matcher.group(1);  // 匹配的全部数字字符串 (包含前导零)
             int number = Integer.parseInt(numberStr);  // 转换为整数自动去除前导零
 
-            return number >= 300 && number <350;
+            return number >= 300 && number < 350;
         } else {
             System.out.println("No number found in the file name.");
             return false;
@@ -162,14 +162,24 @@ public class GcsReader extends Reader {
             Storage gcsClient = GCSUtil.initGCSClient(readerSliceConfig);
 
             final Bucket bucket = gcsClient.get(readerSliceConfig.getString(Key.BUCKET));
+            final String fileType = readerSliceConfig.getString(Key.FILETYPE);
             Blob blob = bucket.get(path);
 
             if (blob != null) {
-                InputStream inputStream = readBlobAsInputStream(blob);
-                UnstructuredStorageReaderUtil.readFromStream(inputStream, path,
-                        this.readerSliceConfig, recordSender,
-                        this.getTaskPluginCollector());
-                recordSender.flush();
+                if (fileType.equals(Constant.CSV)) {
+                    InputStream inputStream = readBlobAsInputStream(blob);
+
+                    UnstructuredStorageReaderUtil.readFromStream(inputStream, path,
+                            this.readerSliceConfig, recordSender,
+                            this.getTaskPluginCollector());
+                    recordSender.flush();
+                } else if (fileType.equals(Constant.PARQUET)) {
+
+                    DFSUtil.readParquet(path,
+                            this.readerSliceConfig, recordSender,
+                            this.getTaskPluginCollector());
+                    recordSender.flush();
+                }
             } else {
                 System.out.println("Blob not found.");
             }
@@ -178,5 +188,6 @@ public class GcsReader extends Reader {
         private static InputStream readBlobAsInputStream(Blob blob) {
             return Channels.newInputStream(blob.reader());
         }
+
     }
 }
